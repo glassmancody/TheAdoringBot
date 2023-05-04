@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import tmi from "tmi.js";
 
-import { Configuration, CreateImageRequestSizeEnum, OpenAIApi } from "openai";
+import { Configuration, OpenAIApi } from "openai";
 
 import DBStorage from "./Storage.js";
 import Log from "./log.js";
@@ -137,6 +137,15 @@ async function main() {
     client.on("message", (channel, tags, message, self) => {
       if (self) return;
 
+      const id = tags["user-id"];
+      const name = tags["username"];
+
+      if (!id || !name) {
+        Log.warn(`skipping message [ID=${id} name=${name}]: ${message}`);
+        return;
+      }
+
+      // ID of the AMA redemption
       const ID_Query = "2fbb0ed1-e56f-4229-ac52-37b44ad0b239";
 
       if (tags["custom-reward-id"] === ID_Query) {
@@ -149,25 +158,34 @@ async function main() {
         return;
       }
 
-      if (!message.startsWith("!")) return;
-
-      const id = tags["user-id"];
-      const name = tags["username"];
-
-      if (!id || !name) {
-        Log.warn(`skipping message [ID=${id} name=${name}]: ${message}`);
-        return;
+      if (!message.startsWith("!")) {
+        // Log any messages which aren't commands
+        Storage.storeMessage(id, name, message);
       }
 
-      // const args = message.slice(1).split(" ");
-      // const command = args.shift().toLowerCase();
-      // const options = args.join(" ");
+      // Parse commmand and options
+      const args = message.slice(1).split(" ");
+      const command = args.shift().toLowerCase();
+      const options = args.join(" ");
 
-      // if (command === "query") {
-      //   processCompletion(channel, options);
-      // }
-      // Log.message(message);
-      // Storage.storeMessage(id, name, message);
+      // Gets a message from the user (if any)
+      if (command === "quote") {
+        const messages = Storage.getMessagesForUser(id);
+        // Don't start quoting until they've spoken at least a little bit
+        const MinMessages = 20;
+        if (messages.length > MinMessages) {
+          // TODO: Add support to search to find a user by their ID.
+          // GET https://api.twitch.tv/helix/users?login=<username>
+          const targetName = name;
+          client.say(
+            `@${targetName} once said "${
+              messages[Math.floor(Math.random() * messages.length)]
+            }"`
+          );
+        } else {
+          client.say(`@${name} Not yet PepePoint`);
+        }
+      }
     });
   } catch (error) {
     Log.error(`Fatal error: ${error}`);

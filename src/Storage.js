@@ -10,6 +10,10 @@ export default class DBStorage {
     this.db.read();
   }
 
+  getMessagesForUser(id) {
+    return this.db.data.users?.[id]?.messages ?? [];
+  }
+
   storeMessage(id, name, message) {
     // Assign default object if user was never added
     this.db.data.users[id] ??= {
