@@ -54,11 +54,9 @@ async function main() {
       try {
         openAIOnCooldown = true;
 
-        prompt = `Draw this as an artist with 20 years of experience and super realistic. Draw in the style of a unique Balenciaga piece for a runway show. ${prompt}`;
-
         const response = await openai.createImage({
           n: 1,
-          size: "256x256",
+          size: "1024x1024",
           prompt: prompt,
         });
 
@@ -67,7 +65,7 @@ async function main() {
       } catch (error) {
         if (error.response) {
           Log.error(error.response.status);
-          Log.error(error.response.data);
+          Log.error(JSON.stringify(error.response.data));
         } else {
           Log.error(error.message);
         }
@@ -111,7 +109,7 @@ async function main() {
       } catch (error) {
         if (error.response) {
           Log.error(error.response.status);
-          Log.error(error.response.data);
+          Log.error(JSON.stringify(error.response.data));
         } else {
           Log.error(error.message);
         }
@@ -143,7 +141,7 @@ async function main() {
 
       if (tags["custom-reward-id"] === ID_Query) {
         const imagePrefix = "imagine ";
-        if (message.toLowerCase().startsWith(imagePrefix)) {
+        if (message.toLowerCase().startsWith(imagePrefix) && tags.mod) {
           processImage(channel, message.substring(imagePrefix.length).trim());
         } else {
           processCompletion(channel, message);
