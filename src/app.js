@@ -47,7 +47,9 @@ async function main() {
     );
 
     // Set up discord webhook
-    const discord = new WebhookClient({url: `${process.env.DISCORD_WEBHOOK}`});
+    const discord = new WebhookClient({
+      url: `${process.env.DISCORD_WEBHOOK}`,
+    });
 
     const processStarbucks = async (channel) => {
       if (openAIOnCooldown) {
@@ -61,12 +63,17 @@ async function main() {
         openAIOnCooldown = true;
 
         const imagePath = path.join("data", "starbucks.png");
-        const response = await openai.createImageVariation(fs.createReadStream(imagePath), 1, "1024x1024", "url");
+        const response = await openai.createImageVariation(
+          fs.createReadStream(imagePath),
+          1,
+          "1024x1024",
+          "url"
+        );
         const url = response.data.data[0].url;
 
         const discordResponse = await discord.send({
           content: "A picture of a starbucks enjoyer",
-          files: [{attachment: url, name: "starbucks.png"}]            
+          files: [{ attachment: url, name: "starbucks.png" }],
         });
         client.say(channel, `${discordResponse.attachments[0].url}`);
       } catch (error) {
@@ -199,6 +206,7 @@ async function main() {
       if (!message.startsWith("!")) {
         // Log any messages which aren't commands
         Storage.storeMessage(id, name, message);
+        return;
       }
 
       // Parse commmand and options
@@ -223,8 +231,7 @@ async function main() {
         } else {
           client.say(`@${name} Not yet PepePoint`);
         }
-      }
-      else if (command === "starbucks") {
+      } else if (command === "starbucks") {
         processStarbucks(channel);
       }
     });
