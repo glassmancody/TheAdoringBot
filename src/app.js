@@ -1,6 +1,9 @@
 import dotenv from "dotenv";
 import tmi from "tmi.js";
+import fs from "fs";
+import path from "path";
 
+import { WebhookClient } from "discord.js";
 import { Configuration, OpenAIApi } from "openai";
 
 import DBStorage from "./Storage.js";
@@ -42,6 +45,41 @@ async function main() {
         apiKey: `${process.env.OPENAI_API_KEY}`,
       })
     );
+
+    // Set up discord webhook
+    const discord = new WebhookClient({url: `${process.env.DISCORD_WEBHOOK}`});
+
+    const processStarbucks = async (channel) => {
+      if (openAIOnCooldown) {
+        Log.warn(`Skipping starbucks generation, on cooldown`);
+        return;
+      }
+
+      client.say(channel, "One kappachino coming right up CoffeeTime");
+
+      try {
+        openAIOnCooldown = true;
+
+        const imagePath = path.join("data", "starbucks.png");
+        const response = await openai.createImageVariation(fs.createReadStream(imagePath), 1, "1024x1024", "url");
+        const url = response.data.data[0].url;
+
+        const discordResponse = await discord.send({
+          content: "A picture of a starbucks enjoyer",
+          files: [{attachment: url, name: "starbucks.png"}]            
+        });
+        client.say(channel, `${discordResponse.attachments[0].url}`);
+      } catch (error) {
+        if (error.response) {
+          Log.error(error.response.status);
+          Log.error(JSON.stringify(error.response.data));
+        } else {
+          Log.error(error.message);
+        }
+      } finally {
+        openAIOnCooldown = false;
+      }
+    };
 
     const processImage = async (channel, prompt) => {
       if (openAIOnCooldown) {
@@ -186,6 +224,9 @@ async function main() {
           client.say(`@${name} Not yet PepePoint`);
         }
       }
+      else if (command === "starbucks") {
+        processStarbucks(channel);
+      }
     });
   } catch (error) {
     Log.error(`Fatal error: ${error}`);
@@ -193,5 +234,4 @@ async function main() {
     // Cleanup
   }
 }
-
 main();
