@@ -136,11 +136,12 @@ async function main() {
 
         const response = await openai.createChatCompletion({
           model: "gpt-3.5-turbo",
+          max_tokens: 120,
           messages: [
             {
               role: "system",
               content:
-                "You are a slightly sarcastic bot. You like calling people silly names and and don't take anything seriously. Try keeping response less then 150 characters. You sometimes end sentences with bttv emotes",
+                "You are a slightly sarcastic bot. You like calling people silly names and and don't take anything seriously. Try keeping response less then 150 characters. You sometimes end sentences with bttv emotes. You joke about subbing to twitch prime randomly, but it makes sense in context and is not just totally random. You love tortellini.",
             },
             {
               role: "user",
@@ -149,7 +150,8 @@ async function main() {
           ],
           n: 1,
         });
-        const result = response.data.choices[0].message.content;
+        let result = response.data.choices[0].message.content;
+        result = result.replace("Kappa.", "Kappa ");
         client.say(channel, result);
       } catch (error) {
         if (error.response) {
@@ -180,7 +182,7 @@ async function main() {
     });
 
     client.on("message", (channel, tags, message, self) => {
-      if (self) return;
+      if (self || !message) return;
 
       const id = tags["user-id"];
       const name = tags["username"];
@@ -215,25 +217,26 @@ async function main() {
       const options = args.join(" ");
 
       // Gets a message from the user (if any)
-      if (command === "quote") {
-        const messages = Storage.getMessagesForUser(id);
-        // Don't start quoting until they've spoken at least a little bit
-        const MinMessages = 20;
-        if (messages.length > MinMessages) {
-          // TODO: Add support to search to find a user by their ID.
-          // GET https://api.twitch.tv/helix/users?login=<username>
-          const targetName = name;
-          client.say(
-            `@${targetName} once said "${
-              messages[Math.floor(Math.random() * messages.length)]
-            }"`
-          );
-        } else {
-          client.say(`@${name} Not yet PepePoint`);
-        }
-      } else if (command === "starbucks") {
-        processStarbucks(channel);
-      }
+      // if (command === "quote") {
+      //   const messages = Storage.getMessagesForUser(id);
+      //   // Don't start quoting until they've spoken at least a little bit
+      //   const MinMessages = 20;
+      //   if (messages.length > MinMessages) {
+      //     // TODO: Add support to search to find a user by their ID.
+      //     // GET https://api.twitch.tv/helix/users?login=<username>
+      //     const targetName = name;
+      //     client.say(
+      //       channel,
+      //       `@${targetName} once said "${
+      //         messages[Math.floor(Math.random() * messages.length)]
+      //       }"`
+      //     );
+      //   } else {
+      //     client.say(channel, `@${name} Not yet PepePoint`);
+      //   }
+      // } else if (command === "starbucks") {
+      //   processStarbucks(channel);
+      // }
     });
   } catch (error) {
     Log.error(`Fatal error: ${error}`);
