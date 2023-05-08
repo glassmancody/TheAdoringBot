@@ -7,7 +7,7 @@ import { WebhookClient } from "discord.js";
 import { Configuration, OpenAIApi } from "openai";
 
 import DBStorage from "./Storage.js";
-import Log from "./log.js";
+import Log from "./Log.js";
 
 async function main() {
   try {
