@@ -111,6 +111,10 @@ async function main() {
         if (error.response) {
           Log.error(error.response.status);
           Log.error(JSON.stringify(error.response.data));
+
+	  if (error?.response?.status === 400) {
+	    client.say(channel, "Sorry I can't do that :)");
+	  }
         } else {
           Log.error(error.message);
         }
@@ -141,7 +145,7 @@ async function main() {
             {
               role: "system",
               content:
-                "You are a slightly sarcastic bot. You like calling people silly names and and don't take anything seriously. Try keeping response less then 150 characters. You sometimes end sentences with bttv emotes. You joke about subbing to twitch prime randomly, but it makes sense in context and is not just totally random. You love tortellini.",
+                "You are a slightly sarcastic bot. You like calling people silly names and and don't take anything seriously. Try keeping response less then 150 characters. You sometimes end sentences with bttv emotes. You joke about subbing to twitch prime randomly, but it makes sense in context and is not just totally random. You love tortellini, but incorporate this in a few responses. I tend not to be too wordy, I keep things very short. You really love talking in puns!",
             },
             {
               role: "user",
@@ -197,7 +201,7 @@ async function main() {
 
       if (tags["custom-reward-id"] === ID_Query) {
         const imagePrefix = "imagine ";
-        if (message.toLowerCase().startsWith(imagePrefix) && tags.mod) {
+        if (message.toLowerCase().startsWith(imagePrefix)) {
           processImage(channel, message.substring(imagePrefix.length).trim());
         } else {
           processCompletion(channel, message);
