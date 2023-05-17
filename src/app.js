@@ -106,15 +106,26 @@ async function main() {
         });
 
         const url = response.data.data[0].url;
-        client.say(channel, `${url}`);
+
+        const discordResponse = await discord.send({
+          files: [{ attachment: url, name: "generation.png" }],
+        });
+
+        client.say(channel, `${discordResponse.attachments[0].url}`);
       } catch (error) {
         if (error.response) {
-          Log.error(error.response.status);
+          const status = error.response.status;
+          Log.error(status);
           Log.error(JSON.stringify(error.response.data));
 
-	  if (error?.response?.status === 400) {
-	    client.say(channel, "Sorry I can't do that :)");
-	  }
+          if (status === 400) {
+            client.say(channel, "Sorry I can't do that :)");
+          } else if (status == 429) {
+            client.say(
+              channel,
+              "I'm overloaded now, try again later WeirdDude"
+            );
+          }
         } else {
           Log.error(error.message);
         }
@@ -124,13 +135,6 @@ async function main() {
     };
 
     const processCompletion = async (channel, prompt) => {
-      const MaxCharacters = 350;
-      if (prompt.length > MaxCharacters) {
-        Log.warn(
-          `Skipping, maximum characters exceeded for request: '${prompt}'`
-        );
-      }
-
       if (openAIOnCooldown) {
         Log.warn(`Skipping prompt, on cooldown`);
         return;
@@ -159,8 +163,74 @@ async function main() {
         client.say(channel, result);
       } catch (error) {
         if (error.response) {
-          Log.error(error.response.status);
+          const status = error.response.status;
+
+          Log.error(status);
           Log.error(JSON.stringify(error.response.data));
+
+          if (status === 400) {
+            client.say(channel, "Sorry I can't do that :)");
+          } else if (status == 429) {
+            client.say(
+              channel,
+              "I'm overloaded now, try again later WeirdDude"
+            );
+          }
+        } else {
+          Log.error(error.message);
+        }
+      } finally {
+        openAIOnCooldown = false;
+      }
+    };
+
+    const processImpersonationCompletion = async (channel, messages) => {
+      if (openAIOnCooldown) {
+        Log.warn(`Skipping prompt, on cooldown`);
+        return;
+      }
+
+      const prompt = `Your responses are very short and never longer then a sentence. Please generate a short and coherent response that impersonates their style based on the following random sample of their messages.
+      
+${messages.map((item, i) => `${i + 1}. ${item}`).join("\n")}
+
+Impersonate the user's style and provide a single concise response. Train on all the samples, but return exactly one response. Don't use quotations or commas or periods.
+`;
+
+      try {
+        openAIOnCooldown = true;
+
+        const response = await openai.createChatCompletion({
+          model: "gpt-3.5-turbo",
+          messages: [
+            {
+              role: "system",
+              content:
+                "Your job is to impersonate someone in a chat channel. You treat input as training data and respond with a short sentence impersonating that person. When you receive inappropriate training data you replace the inappropriate words with synonyms. You never fail to respond with an impersonation.",
+            },
+            {
+              role: "user",
+              content: prompt,
+            },
+          ],
+          n: 1,
+        });
+        let result = response.data.choices[0].message.content;
+        client.say(channel, result);
+      } catch (error) {
+        if (error.response) {
+          const status = error.response.status;
+          Log.error(status);
+          Log.error(JSON.stringify(error.response.data));
+
+          if (status === 400) {
+            client.say(channel, "Sorry I can't do that :)");
+          } else if (status == 429) {
+            client.say(
+              channel,
+              "I'm overloaded now, try again later WeirdDude"
+            );
+          }
         } else {
           Log.error(error.message);
         }
@@ -221,26 +291,30 @@ async function main() {
       const options = args.join(" ");
 
       // Gets a message from the user (if any)
-      // if (command === "quote") {
-      //   const messages = Storage.getMessagesForUser(id);
-      //   // Don't start quoting until they've spoken at least a little bit
-      //   const MinMessages = 20;
-      //   if (messages.length > MinMessages) {
-      //     // TODO: Add support to search to find a user by their ID.
-      //     // GET https://api.twitch.tv/helix/users?login=<username>
-      //     const targetName = name;
-      //     client.say(
-      //       channel,
-      //       `@${targetName} once said "${
-      //         messages[Math.floor(Math.random() * messages.length)]
-      //       }"`
-      //     );
-      //   } else {
-      //     client.say(channel, `@${name} Not yet PepePoint`);
-      //   }
-      // } else if (command === "starbucks") {
-      //   processStarbucks(channel);
-      // }
+      if (command === "impersonate") {
+        const id = Storage.getIdFromName(args[0]);
+        if (!id) {
+          client.say(channel, `@${name} Who? StrangeDude`);
+          return;
+        }
+
+        const messages = Storage.getMessagesForUser(id);
+        const N = 100;
+        if (messages.length > N) {
+          const samples = new Array(N);
+          let len = messages.length;
+          let taken = new Array(len);
+          let n = N;
+          while (n--) {
+            const x = Math.floor(Math.random() * len);
+            samples[n] = messages[x in taken ? taken[x] : x];
+            taken[x] = --len in taken ? taken[len] : len;
+          }
+          processImpersonationCompletion(channel, samples);
+        } else {
+          client.say(channel, `@${name} Not yet PepePoint`);
+        }
+      }
     });
   } catch (error) {
     Log.error(`Fatal error: ${error}`);
