@@ -184,7 +184,7 @@ async function main() {
       }
     };
 
-    const processImpersonationCompletion = async (channel, messages) => {
+    const processImpersonationCompletion = async (channel, messages, username) => {
       if (openAIOnCooldown) {
         Log.warn(`Skipping prompt, on cooldown`);
         return;
@@ -216,7 +216,7 @@ Impersonate the user's style and provide a single concise response. Train on all
           n: 1,
         });
         let result = response.data.choices[0].message.content;
-        client.say(channel, result);
+        client.say(channel, `${username}: ${result}`);
       } catch (error) {
         if (error.response) {
           const status = error.response.status;
@@ -310,7 +310,7 @@ Impersonate the user's style and provide a single concise response. Train on all
             samples[n] = messages[x in taken ? taken[x] : x];
             taken[x] = --len in taken ? taken[len] : len;
           }
-          processImpersonationCompletion(channel, samples);
+          processImpersonationCompletion(channel, samples, args[0]);
         } else {
           client.say(channel, `@${name} Not yet PepePoint`);
         }
