@@ -291,7 +291,7 @@ Impersonate the user's style and provide a single concise response. Train on all
       const options = args.join(" ");
 
       // Gets a message from the user (if any)
-      if (command === "impersonate") {
+      if (command === "impersonate" && false) {
         const id = Storage.getIdFromName(args[0]);
         if (!id) {
           client.say(channel, `@${name} Who? StrangeDude`);
