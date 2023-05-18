@@ -47,7 +47,7 @@ async function main() {
       })
     );
 
-    // Set up discord webhook
+    // Set up discord webhook 
     const discord = new WebhookClient({
       url: `${process.env.DISCORD_WEBHOOK}`,
     });
@@ -89,7 +89,7 @@ async function main() {
       }
     };
 
-    const processImage = async (channel, prompt) => {
+    const processImage = async (channel, prompt, name) => {
       if (openAIOnCooldown) {
         Log.warn(`Skipping image prompt, on cooldown`);
         return;
@@ -121,12 +121,16 @@ async function main() {
         ctx.drawImage(img, 512, 512, img.width, img.height);
 
         const discordResponse = await discord.send({
+	  content: `${name} > *${prompt}*`,
           files: [
             {
               attachment: canvas.toBuffer("image/png"),
               name: "generation.png",
             },
           ],
+	  avatarURL: "https://media.discordapp.net/attachments/1103778509844918315/1108865205204684831/avatar.png?width=256&height=256",
+       	  threadId: "1108857001250922536",
+	  username: "Dagoth Daddy",
         });
 
         client.say(channel, `${discordResponse.attachments[0].url}`);
@@ -290,7 +294,7 @@ Impersonate the user's style and provide a single concise response. Train on all
       if (tags["custom-reward-id"] === ID_Query) {
         const imagePrefix = "imagine ";
         if (message.toLowerCase().startsWith(imagePrefix)) {
-          processImage(channel, message.substring(imagePrefix.length).trim());
+          processImage(channel, message.substring(imagePrefix.length).trim(), name);
         } else {
           processCompletion(channel, message);
         }
