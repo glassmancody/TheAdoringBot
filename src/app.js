@@ -194,7 +194,7 @@ async function main() {
       
 ${messages.map((item, i) => `${i + 1}. ${item}`).join("\n")}
 
-Impersonate the user's style and provide a single concise response. Train on all the samples, but return exactly one response. Don't use quotations or commas or periods.
+Impersonate the user's style and provide a single concise response. Train on all the samples, but return exactly one response. Don't use quotations. It is very important the response is short and makes a little sense.
 `;
 
       try {
