@@ -5,6 +5,7 @@ import path from "path";
 
 import { WebhookClient } from "discord.js";
 import { Configuration, OpenAIApi } from "openai";
+import Canvas from "canvas";
 
 import DBStorage from "./Storage.js";
 import Log from "./Log.js";
@@ -100,15 +101,32 @@ async function main() {
         openAIOnCooldown = true;
 
         const response = await openai.createImage({
-          n: 1,
-          size: "1024x1024",
+          n: 4,
+          size: "512x512",
           prompt: prompt,
         });
 
-        const url = response.data.data[0].url;
+        const canvas = Canvas.createCanvas(1024, 1024);
+        const ctx = canvas.getContext("2d");
+
+        let img = null;
+
+        img = await Canvas.loadImage(response.data.data[0].url);
+        ctx.drawImage(img, 0, 0, img.width, img.height);
+        img = await Canvas.loadImage(response.data.data[1].url);
+        ctx.drawImage(img, 0, 512, img.width, img.height);
+        img = await Canvas.loadImage(response.data.data[2].url);
+        ctx.drawImage(img, 512, 0, img.width, img.height);
+        img = await Canvas.loadImage(response.data.data[3].url);
+        ctx.drawImage(img, 512, 512, img.width, img.height);
 
         const discordResponse = await discord.send({
-          files: [{ attachment: url, name: "generation.png" }],
+          files: [
+            {
+              attachment: canvas.toBuffer("image/png"),
+              name: "generation.png",
+            },
+          ],
         });
 
         client.say(channel, `${discordResponse.attachments[0].url}`);
