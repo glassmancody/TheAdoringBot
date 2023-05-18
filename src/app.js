@@ -202,7 +202,7 @@ async function main() {
       }
     };
 
-    const processImpersonationCompletion = async (channel, messages) => {
+    const processImpersonationCompletion = async (channel, messages, username) => {
       if (openAIOnCooldown) {
         Log.warn(`Skipping prompt, on cooldown`);
         return;
@@ -212,7 +212,7 @@ async function main() {
       
 ${messages.map((item, i) => `${i + 1}. ${item}`).join("\n")}
 
-Impersonate the user's style and provide a single concise response. Train on all the samples, but return exactly one response. Don't use quotations or commas or periods.
+Impersonate the user's style and provide a single concise response. Train on all the samples, but return exactly one response. Don't use quotations. It is very important the response is short and makes a little sense.
 `;
 
       try {
@@ -234,7 +234,7 @@ Impersonate the user's style and provide a single concise response. Train on all
           n: 1,
         });
         let result = response.data.choices[0].message.content;
-        client.say(channel, result);
+        client.say(channel, `${username}: ${result}`);
       } catch (error) {
         if (error.response) {
           const status = error.response.status;
@@ -309,7 +309,7 @@ Impersonate the user's style and provide a single concise response. Train on all
       const options = args.join(" ");
 
       // Gets a message from the user (if any)
-      if (command === "impersonate") {
+      if (command === "impersonate" && false) {
         const id = Storage.getIdFromName(args[0]);
         if (!id) {
           client.say(channel, `@${name} Who? StrangeDude`);
@@ -328,7 +328,7 @@ Impersonate the user's style and provide a single concise response. Train on all
             samples[n] = messages[x in taken ? taken[x] : x];
             taken[x] = --len in taken ? taken[len] : len;
           }
-          processImpersonationCompletion(channel, samples);
+          processImpersonationCompletion(channel, samples, args[0]);
         } else {
           client.say(channel, `@${name} Not yet PepePoint`);
         }
