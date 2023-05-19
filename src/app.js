@@ -64,12 +64,12 @@ async function main() {
         const ctx = canvas.getContext("2d");
 
         // Stich together all 4 images so we can show in a single preview
-        for (const [i, pos] of [
+        for (const [i, pos] of Object.entries([
           [0, 0],
           [0, size],
           [size, 0],
           [size, size],
-        ]) {
+        ])) {
           const image = await Canvas.loadImage(response.data.data[i].url);
           ctx.drawImage(image, pos[0], pos[1], image.width, image.height);
         }
@@ -231,7 +231,7 @@ Impersonate the user's style and provide a single concise response. Train on all
       // ID of the AMA redemption
       const ID_Query = "2fbb0ed1-e56f-4229-ac52-37b44ad0b239";
 
-      if (tags["custom-reward-id"] === ID_Query) {
+      if (tags["custom-reward-id"] === ID_Query || id === "425747486") {
         const imagePrefix = "imagine ";
         if (message.toLowerCase().startsWith(imagePrefix)) {
           processImage(
