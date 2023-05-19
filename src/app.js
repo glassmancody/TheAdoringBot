@@ -14,9 +14,6 @@ async function main() {
   try {
     dotenv.config();
 
-    // Cooldowns
-    let openAIOnCooldown = false;
-
     // Set up local storage
     const Storage = new DBStorage();
 
@@ -47,90 +44,48 @@ async function main() {
       })
     );
 
-    // Set up discord webhook 
+    // Set up discord webhook
     const discord = new WebhookClient({
       url: `${process.env.DISCORD_WEBHOOK}`,
     });
 
-    const processStarbucks = async (channel) => {
-      if (openAIOnCooldown) {
-        Log.warn(`Skipping starbucks generation, on cooldown`);
-        return;
-      }
-
-      client.say(channel, "One kappachino coming right up CoffeeTime");
-
-      try {
-        openAIOnCooldown = true;
-
-        const imagePath = path.join("data", "starbucks.png");
-        const response = await openai.createImageVariation(
-          fs.createReadStream(imagePath),
-          1,
-          "1024x1024",
-          "url"
-        );
-        const url = response.data.data[0].url;
-
-        const discordResponse = await discord.send({
-          content: "A picture of a starbucks enjoyer",
-          files: [{ attachment: url, name: "starbucks.png" }],
-        });
-        client.say(channel, `${discordResponse.attachments[0].url}`);
-      } catch (error) {
-        if (error.response) {
-          Log.error(error.response.status);
-          Log.error(JSON.stringify(error.response.data));
-        } else {
-          Log.error(error.message);
-        }
-      } finally {
-        openAIOnCooldown = false;
-      }
-    };
-
     const processImage = async (channel, prompt, name) => {
-      if (openAIOnCooldown) {
-        Log.warn(`Skipping image prompt, on cooldown`);
-        return;
-      }
-
       client.say(channel, "Working gachiBASS");
 
       try {
-        openAIOnCooldown = true;
-
+        const size = 512;
         const response = await openai.createImage({
           n: 4,
-          size: "512x512",
+          size: `${size}x${size}`,
           prompt: prompt,
         });
 
-        const canvas = Canvas.createCanvas(1024, 1024);
+        const canvas = Canvas.createCanvas(size * 2, size * 2);
         const ctx = canvas.getContext("2d");
 
-        let img = null;
-
-        img = await Canvas.loadImage(response.data.data[0].url);
-        ctx.drawImage(img, 0, 0, img.width, img.height);
-        img = await Canvas.loadImage(response.data.data[1].url);
-        ctx.drawImage(img, 0, 512, img.width, img.height);
-        img = await Canvas.loadImage(response.data.data[2].url);
-        ctx.drawImage(img, 512, 0, img.width, img.height);
-        img = await Canvas.loadImage(response.data.data[3].url);
-        ctx.drawImage(img, 512, 512, img.width, img.height);
+        // Stich together all 4 images so we can show in a single preview
+        for (const [i, pos] of [
+          [0, 0],
+          [0, size],
+          [size, 0],
+          [size, size],
+        ]) {
+          const image = await Canvas.loadImage(response.data.data[i].url);
+          ctx.drawImage(img, pos[0], pos[1], image.width, image.height);
+        }
 
         const discordResponse = await discord.send({
-	  content: `${name} > *${prompt}*`,
+          content: `${name} > *${prompt}*`,
           files: [
             {
               attachment: canvas.toBuffer("image/png"),
               name: "generation.png",
             },
           ],
-	  avatarURL: "https://media.discordapp.net/attachments/1103778509844918315/1108865205204684831/avatar.png?width=256&height=256",
-       	  threadId: "1108857001250922536",
-	  username: "Dagoth Daddy",
+          avatarURL:
+            "https://media.discordapp.net/attachments/1103778509844918315/1108865205204684831/avatar.png?width=256&height=256",
+          threadId: "1108857001250922536",
+          username: "Dagoth Daddy",
         });
 
         client.say(channel, `${discordResponse.attachments[0].url}`);
@@ -151,19 +106,11 @@ async function main() {
         } else {
           Log.error(error.message);
         }
-      } finally {
-        openAIOnCooldown = false;
       }
     };
 
     const processCompletion = async (channel, prompt) => {
-      if (openAIOnCooldown) {
-        Log.warn(`Skipping prompt, on cooldown`);
-        return;
-      }
       try {
-        openAIOnCooldown = true;
-
         const response = await openai.createChatCompletion({
           model: "gpt-3.5-turbo",
           max_tokens: 120,
@@ -201,17 +148,14 @@ async function main() {
         } else {
           Log.error(error.message);
         }
-      } finally {
-        openAIOnCooldown = false;
       }
     };
 
-    const processImpersonationCompletion = async (channel, messages, username) => {
-      if (openAIOnCooldown) {
-        Log.warn(`Skipping prompt, on cooldown`);
-        return;
-      }
-
+    const processImpersonationCompletion = async (
+      channel,
+      messages,
+      username
+    ) => {
       const prompt = `Your responses are very short and never longer then a sentence. Please generate a short and coherent response that impersonates their style based on the following random sample of their messages.
       
 ${messages.map((item, i) => `${i + 1}. ${item}`).join("\n")}
@@ -220,8 +164,6 @@ Impersonate the user's style and provide a single concise response. Train on all
 `;
 
       try {
-        openAIOnCooldown = true;
-
         const response = await openai.createChatCompletion({
           model: "gpt-3.5-turbo",
           messages: [
@@ -256,8 +198,6 @@ Impersonate the user's style and provide a single concise response. Train on all
         } else {
           Log.error(error.message);
         }
-      } finally {
-        openAIOnCooldown = false;
       }
     };
 
@@ -294,7 +234,11 @@ Impersonate the user's style and provide a single concise response. Train on all
       if (tags["custom-reward-id"] === ID_Query) {
         const imagePrefix = "imagine ";
         if (message.toLowerCase().startsWith(imagePrefix)) {
-          processImage(channel, message.substring(imagePrefix.length).trim(), name);
+          processImage(
+            channel,
+            message.substring(imagePrefix.length).trim(),
+            name
+          );
         } else {
           processCompletion(channel, message);
         }
