@@ -71,7 +71,7 @@ async function main() {
           [size, size],
         ]) {
           const image = await Canvas.loadImage(response.data.data[i].url);
-          ctx.drawImage(img, pos[0], pos[1], image.width, image.height);
+          ctx.drawImage(image, pos[0], pos[1], image.width, image.height);
         }
 
         const discordResponse = await discord.send({
