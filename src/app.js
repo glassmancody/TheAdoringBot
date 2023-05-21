@@ -231,7 +231,7 @@ Impersonate the user's style and provide a single concise response. Train on all
       // ID of the AMA redemption
       const ID_Query = "2fbb0ed1-e56f-4229-ac52-37b44ad0b239";
 
-      if (tags["custom-reward-id"] === ID_Query || id === "425747486") {
+      if (tags["custom-reward-id"] === ID_Query) {
         const imagePrefix = "imagine ";
         if (message.toLowerCase().startsWith(imagePrefix)) {
           processImage(
