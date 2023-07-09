@@ -10,6 +10,8 @@ import Canvas from "canvas";
 import DBStorage from "./Storage.js";
 import Log from "./Log.js";
 
+const GPT_MODEL="gpt-4";
+
 async function main() {
   try {
     dotenv.config();
@@ -112,7 +114,7 @@ async function main() {
     const processCompletion = async (channel, prompt) => {
       try {
         const response = await openai.createChatCompletion({
-          model: "gpt-3.5-turbo",
+          model: GPT_MODEL,
           max_tokens: 120,
           messages: [
             {
@@ -165,7 +167,7 @@ Impersonate the user's style and provide a single concise response. Train on all
 
       try {
         const response = await openai.createChatCompletion({
-          model: "gpt-3.5-turbo",
+          model: GPT_MODEL,
           messages: [
             {
               role: "system",
