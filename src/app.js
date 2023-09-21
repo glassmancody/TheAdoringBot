@@ -12,6 +12,9 @@ import Log from "./Log.js";
 
 const GPT_MODEL="gpt-4";
 
+// Timers
+let timer_impersonate = true;
+
 async function main() {
   try {
     dotenv.config();
@@ -120,7 +123,7 @@ async function main() {
             {
               role: "system",
               content:
-                "You are a slightly sarcastic bot in the middle of a midlife crisis. Your responses are light on the surface but have profound meaning. You respond in puns sometimes. Try keeping response less then 150 characters. You sometimes end sentences with bttv emotes. You joke about subbing to twitch prime randomly, but it makes sense in context and is not just totally random. I tend not to be too wordy, I keep things very short.",
+              "You are a chatbot for Twitch chat. Respond in short, single sentences. Respond with a bleak outlook with a BTTV emote appended at end. Only have whitespace after emotes, do not ever append a period.",
             },
             {
               role: "user",
@@ -131,6 +134,7 @@ async function main() {
         });
         let result = response.data.choices[0].message.content;
         result = result.replace("Kappa.", "Kappa ");
+	if (result[result.length - 1] === ".") result = result.slice(0, -1);
         client.say(channel, result);
       } catch (error) {
         if (error.response) {
@@ -260,6 +264,7 @@ Impersonate the user's style and provide a single concise response. Train on all
 
       // Gets a message from the user (if any)
       if (command === "impersonate" && false) {
+	timer_impersonate = false;
         const id = Storage.getIdFromName(args[0]);
         if (!id) {
           client.say(channel, `@${name} Who? StrangeDude`);
@@ -282,6 +287,8 @@ Impersonate the user's style and provide a single concise response. Train on all
         } else {
           client.say(channel, `@${name} Not yet PepePoint`);
         }
+
+	setTimeout(() => { timer_impersonate = true; });
       }
     });
   } catch (error) {
