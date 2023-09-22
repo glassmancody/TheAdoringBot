@@ -250,7 +250,10 @@ Impersonate the user's style and provide a single concise response. Train on all
         }
         return;
       } else if (tags["custom-reward-id"] === ID_Impersonate) {
-        const userName = message.trim().split(" ")[0];
+        let userName = message.trim().split(" ")[0];
+        if (userName.startsWith("@")) {
+          userName = userName.substring(1);
+        }
         const id = Storage.getIdFromName(userName);
         if (!id) {
           client.say(channel, `@${name} Who? StrangeDude`);
