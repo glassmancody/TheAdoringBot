@@ -12,9 +12,6 @@ import Log from "./Log.js";
 
 const GPT_MODEL="gpt-4";
 
-// Timers
-let timer_impersonate = true;
-
 async function main() {
   try {
     dotenv.config();
@@ -162,11 +159,11 @@ async function main() {
       messages,
       username
     ) => {
-      const prompt = `Your responses are very short and never longer then a sentence. Please generate a short and coherent response that impersonates their style based on the following random sample of their messages.
+      const prompt = `Your responses are very short and never longer then a sentence. Please generate a short and coherent sentence that impersonates their style based on the following random sample of their messages.
       
 ${messages.map((item, i) => `${i + 1}. ${item}`).join("\n")}
 
-Impersonate the user's style and provide a single concise response. Train on all the samples, but return exactly one response. Don't use quotations. It is very important the response is short and makes a little sense.
+Impersonate the user's style and provide a single concise response. Train on all the samples, but return exactly one response. It is important the response is short and makes a little sense.
 `;
 
       try {
@@ -236,6 +233,9 @@ Impersonate the user's style and provide a single concise response. Train on all
 
       // ID of the AMA redemption
       const ID_Query = "2fbb0ed1-e56f-4229-ac52-37b44ad0b239";
+      const ID_Impersonate = "79c04181-945c-4a72-bd99-3dcd7633bdc0";
+
+      // Log.info(tags["custom-reward-id"]);
 
       if (tags["custom-reward-id"] === ID_Query) {
         const imagePrefix = "imagine ";
@@ -249,23 +249,9 @@ Impersonate the user's style and provide a single concise response. Train on all
           processCompletion(channel, message);
         }
         return;
-      }
-
-      if (!message.startsWith("!")) {
-        // Log any messages which aren't commands
-        Storage.storeMessage(id, name, message);
-        return;
-      }
-
-      // Parse commmand and options
-      const args = message.slice(1).split(" ");
-      const command = args.shift().toLowerCase();
-      const options = args.join(" ");
-
-      // Gets a message from the user (if any)
-      if (command === "impersonate" && false) {
-	timer_impersonate = false;
-        const id = Storage.getIdFromName(args[0]);
+      } else if (tags["custom-reward-id"] === ID_Impersonate) {
+        const userName = message.trim().split(" ")[0];
+        const id = Storage.getIdFromName(userName);
         if (!id) {
           client.say(channel, `@${name} Who? StrangeDude`);
           return;
@@ -283,13 +269,22 @@ Impersonate the user's style and provide a single concise response. Train on all
             samples[n] = messages[x in taken ? taken[x] : x];
             taken[x] = --len in taken ? taken[len] : len;
           }
-          processImpersonationCompletion(channel, samples, args[0]);
+          processImpersonationCompletion(channel, samples, userName);
         } else {
           client.say(channel, `@${name} Not yet PepePoint`);
         }
-
-	setTimeout(() => { timer_impersonate = true; });
       }
+
+      if (!message.startsWith("!")) {
+        // Log any messages which aren't commands
+        Storage.storeMessage(id, name, message);
+        return;
+      }
+
+      // Parse commmand and options
+      const args = message.slice(1).split(" ");
+      const command = args.shift().toLowerCase();
+      const options = args.join(" ");
     });
   } catch (error) {
     Log.error(`Fatal error: ${error}`);
