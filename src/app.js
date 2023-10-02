@@ -12,6 +12,16 @@ import Log from "./Log.js";
 
 const GPT_MODEL="gpt-4";
 
+function removeSurroundingQuotes(inputString) {
+  if (
+    (inputString.startsWith('"') && inputString.endsWith('"')) ||
+    (inputString.startsWith("'") && inputString.endsWith("'"))
+  ) {
+    return inputString.slice(1, -1);
+  }
+  return inputString;
+}
+
 async function main() {
   try {
     dotenv.config();
@@ -111,7 +121,7 @@ async function main() {
       }
     };
 
-    const processCompletion = async (channel, prompt) => {
+    const processMaximusCompletion = async (channel, prompt) => {
       try {
         const response = await openai.createChatCompletion({
           model: GPT_MODEL,
@@ -119,8 +129,53 @@ async function main() {
           messages: [
             {
               role: "system",
+              content: `Write me a variation on this meme, you mention Morrowind and Twitch memes: My name is Maximus Decimus Meridius, commander of the Armies of the North, General of the Felix Legions and loyal servant to the true emperor, Marcus Aurelius. Father to a murdered son. Husband to a murdered wife. And I will have my vengeance, in this life or the next.`,
+            },
+          ],
+          n: 1,
+        });
+        let result = response.data.choices[0].message.content;
+        result = result.replace("Kappa.", "Kappa ");
+	    if (result[result.length - 1] === ".") result = result.slice(0, -1);
+        client.say(channel, result);
+      } catch (error) {
+        if (error.response) {
+          const status = error.response.status;
+
+          Log.error(status);
+          Log.error(JSON.stringify(error.response.data));
+
+          if (status === 400) {
+            client.say(channel, "Sorry I can't do that :)");
+          } else if (status == 429) {
+            client.say(
+              channel,
+              "I'm overloaded now, try again later WeirdDude"
+            );
+          }
+        } else {
+          Log.error(error.message);
+        }
+      }
+    };
+
+    const processCompletion = async (channel, prompt) => {
+      try {
+
+        const available_prompts = [
+          "You are a chatbot for Twitch channel run by BUULU, who used to be a professional boxer and was in the Finnish army (which you like to poke fun of at times in your responses). Respond in short, single sentences. Respond with a bleak but funny outlook with a BTTV emote appended at end.",
+          "You are a chatbot for Twitch chat. Respond in short, single sentences. Respond with a bleak outlook with a BTTV emote appended at end.",
+          "You are a chatbot for Twitch chat. Respond in short, single sentences. Respond with a positive outlook with a BTTV emote appended at end. Never ever mention you are an AI or are incapable of doing something requested. If ever you can't retrieve info just make something up and append 'Kappa' at the end of your response.",
+        ]
+
+        const response = await openai.createChatCompletion({
+          model: GPT_MODEL,
+          max_tokens: 120,
+          messages: [
+            {
+              role: "system",
               content:
-              "You are a chatbot for Twitch chat. Respond in short, single sentences. Respond with a bleak outlook with a BTTV emote appended at end. Only have whitespace after emotes, do not ever append a period.",
+              available_prompts[Math.floor(Math.random() * available_prompts.length)],
             },
             {
               role: "user",
@@ -159,11 +214,11 @@ async function main() {
       messages,
       username
     ) => {
-      const prompt = `Your responses are very short and never longer then a sentence. Please generate a short and coherent sentence that impersonates their style based on the following random sample of their messages.
+      const prompt = `Your responses are short and never longer then a sentence. Generate a short and coherent sentence that impersonates their style based on the following random sample of their messages.
       
 ${messages.map((item, i) => `${i + 1}. ${item}`).join("\n")}
 
-Impersonate the user's style and provide a single concise response. Train on all the samples, but return exactly one response. It is important the response is short and makes a little sense.
+Impersonate the user's style and provide a single concise response. Train on all the samples, but return exactly one response.
 `;
 
       try {
@@ -183,7 +238,9 @@ Impersonate the user's style and provide a single concise response. Train on all
           n: 1,
         });
         let result = response.data.choices[0].message.content;
-        client.say(channel, `${username}: ${result}`);
+	      result = removeSurroundingQuotes(result);
+	if (result.endsWith(".")) result = result.slice(0, -1);
+        client.say(channel, `${result}`);
       } catch (error) {
         if (error.response) {
           const status = error.response.status;
@@ -254,6 +311,12 @@ Impersonate the user's style and provide a single concise response. Train on all
         if (userName.startsWith("@")) {
           userName = userName.substring(1);
         }
+
+        if (userName.toLowerCase().startsWith("maximus")) {
+          processMaximusCompletion(channel);
+          return;
+        }
+
         const id = Storage.getIdFromName(userName);
         if (!id) {
           client.say(channel, `@${name} Who? StrangeDude`);
@@ -261,7 +324,7 @@ Impersonate the user's style and provide a single concise response. Train on all
         }
 
         const messages = Storage.getMessagesForUser(id);
-        const N = 100;
+        const N = 50;
         if (messages.length > N) {
           const samples = new Array(N);
           let len = messages.length;
