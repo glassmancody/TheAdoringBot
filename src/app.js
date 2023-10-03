@@ -22,6 +22,10 @@ function removeSurroundingQuotes(inputString) {
   return inputString;
 }
 
+const commandCooldowns = new Map();
+
+const cooldownTime = 60 * 1000; // 1 minute in milliseconds
+
 async function main() {
   try {
     dotenv.config();
@@ -60,6 +64,26 @@ async function main() {
     const discord = new WebhookClient({
       url: `${process.env.DISCORD_WEBHOOK}`,
     });
+
+    const cmd_tortellini = async (channel) => {
+      const currentTime = Date.now();
+      const lastExecutionTime = commandCooldowns.get(command);
+
+      if (!lastExecutionTime || currentTime - lastExecutionTime >= cooldownTime) {
+    	// Command can be processed; update the last execution time
+    	commandCooldowns.set(command, currentTime);
+
+    	// Perform the command processing here
+    	// Your code to process the command goes here
+	const curr = Storage.getKey('tortellini_count', 0);
+	Storage.setKey('tortellini_count', curr + 1);
+
+	 if (curr === 0)
+	    client.say(channel, 'A fool begins to build a tortellini ball. DO NOT LET IT GROW monkaS');
+	 else
+    	    client.say(channel, `The tortellini ball grows to ${curr} inch buuluW`);
+      }
+    }
 
     const processImage = async (channel, prompt, name) => {
       client.say(channel, "Working gachiBASS");
@@ -324,9 +348,9 @@ Impersonate the user's style and provide a single concise response. Train on all
         }
 
         const messages = Storage.getMessagesForUser(id);
-        const N = 50;
-        if (messages.length > N) {
-          const samples = new Array(N);
+        const N = 125;
+        if (messages.length >= 1) {
+          /*const samples = new Array(N);
           let len = messages.length;
           let taken = new Array(len);
           let n = N;
@@ -334,7 +358,8 @@ Impersonate the user's style and provide a single concise response. Train on all
             const x = Math.floor(Math.random() * len);
             samples[n] = messages[x in taken ? taken[x] : x];
             taken[x] = --len in taken ? taken[len] : len;
-          }
+          }*/
+	  const samples = messages.length <= N ? messages : messages.slice(-N);
           processImpersonationCompletion(channel, samples, userName);
         } else {
           client.say(channel, `@${name} Not yet PepePoint`);
@@ -351,6 +376,8 @@ Impersonate the user's style and provide a single concise response. Train on all
       const args = message.slice(1).split(" ");
       const command = args.shift().toLowerCase();
       const options = args.join(" ");
+
+      if (command === 'tortellini') cmd_tortellini(channel);
     });
   } catch (error) {
     Log.error(`Fatal error: ${error}`);

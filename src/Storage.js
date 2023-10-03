@@ -29,6 +29,16 @@ export default class DBStorage {
     return null;
   }
 
+  getKey(id, defaultValue = null) {
+    const value = this.db.data[id] ?? defaultValue;
+    return value;
+  }
+
+  setKey(id, value) {
+    this.db.data[id] = value;
+    this.db.write();
+  }
+
   storeMessage(id, name, message) {
     // Assign default object if user was never added
     this.db.data.users[id] ??= {
