@@ -23,7 +23,6 @@ function removeSurroundingQuotes(inputString) {
 }
 
 const commandCooldowns = new Map();
-
 const cooldownTime = 60 * 1000; // 1 minute in milliseconds
 
 async function main() {
@@ -66,6 +65,7 @@ async function main() {
     });
 
     const cmd_tortellini = async (channel) => {
+      const command = "tortellini";
       const currentTime = Date.now();
       const lastExecutionTime = commandCooldowns.get(command);
 
@@ -81,7 +81,7 @@ async function main() {
 	 if (curr === 0)
 	    client.say(channel, 'A fool begins to build a tortellini ball. DO NOT LET IT GROW monkaS');
 	 else
-    	    client.say(channel, `The tortellini ball grows to ${curr} inch buuluW`);
+    	    client.say(channel, `The tortellini ball grows to ${curr} inches buuluW`);
       }
     }
 
@@ -89,16 +89,23 @@ async function main() {
       client.say(channel, "Working gachiBASS");
 
       try {
-        const size = 512;
+	let newPrompt = prompt;
+	if (newPrompt.toLowerCase().includes("buulu")) {
+	  newPrompt = newPrompt + ". buulu is a balding finnish streamer for twitch";
+	}
+
+        const size = 1024;
         const response = await openai.createImage({
-          n: 4,
+          n: 1,
           size: `${size}x${size}`,
-          prompt: prompt,
+          prompt: newPrompt,
+	  model: "dall-e-3",
         });
 
-        const canvas = Canvas.createCanvas(size * 2, size * 2);
+        const canvas = Canvas.createCanvas(size, size);
         const ctx = canvas.getContext("2d");
 
+	/*
         // Stich together all 4 images so we can show in a single preview
         for (const [i, pos] of Object.entries([
           [0, 0],
@@ -108,7 +115,9 @@ async function main() {
         ])) {
           const image = await Canvas.loadImage(response.data.data[i].url);
           ctx.drawImage(image, pos[0], pos[1], image.width, image.height);
-        }
+        }*/
+	const image = await Canvas.loadImage(response.data.data[0].url);
+	ctx.drawImage(image, 0, 0, image.width, image.height);
 
         const discordResponse = await discord.send({
           content: `${name} > *${prompt}*`,
@@ -238,11 +247,11 @@ async function main() {
       messages,
       username
     ) => {
-      const prompt = `Your responses are short and never longer then a sentence. Generate a short and coherent sentence that impersonates their style based on the following random sample of their messages.
+      const prompt = `You respond in a short single sentence. Generate a short and coherent sentence that impersonates their style based on the following random sample of their messages.
       
 ${messages.map((item, i) => `${i + 1}. ${item}`).join("\n")}
 
-Impersonate the user's style and provide a single concise response. Train on all the samples, but return exactly one response.
+Impersonate the user's style and provide a single concise response. Train on all the samples, but return exactly one response. Avoid punctuation in your response.
 `;
 
       try {
@@ -377,7 +386,10 @@ Impersonate the user's style and provide a single concise response. Train on all
       const command = args.shift().toLowerCase();
       const options = args.join(" ");
 
+     Log.error(`TEST: ${options}`);
+
       if (command === 'tortellini') cmd_tortellini(channel);
+      if (command === 'imagine' && name.toLowerCase() === 'wayzaybear') processImage(channel, options, name);
     });
   } catch (error) {
     Log.error(`Fatal error: ${error}`);
