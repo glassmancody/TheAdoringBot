@@ -389,7 +389,7 @@ Impersonate the user's style and provide a single concise response. Train on all
      Log.error(`TEST: ${options}`);
 
       if (command === 'tortellini') cmd_tortellini(channel);
-      if (command === 'imagine' && name.toLowerCase() === 'wayzaybear') processImage(channel, options, name);
+      if (command === 'imagine' && name.toLowerCase() === 'ifartedinthechurch') processImage(channel, options, name);
     });
   } catch (error) {
     Log.error(`Fatal error: ${error}`);
